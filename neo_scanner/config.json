@@ -1,0 +1,5 @@
+﻿{
+  "statepath": "d:\\NEOScanner\\State",
+  "rpcurl": "http://127.0.0.1:20332/",
+  "pluginpath": "plugins\\net47"
+}
