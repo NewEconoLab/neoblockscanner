@@ -258,7 +258,7 @@ namespace neo_scanner
                     }
                     this.processedBlock = idwant;
 
-                    if (idwant % 1000 == 0 || saveonce > 0)
+                    if (idwant % 5000 == 0 || saveonce > 0)//每5000块备份一次
                     {
                         saveonce = 0;
                         SaveState();

@@ -497,7 +497,8 @@ public class MyJson
         }
         public void Scan(MyJson.ScanObj scan)
         {
-            string _value = "";
+            StringBuilder sb = new StringBuilder();
+            //string _value = "";
             for (int i = scan.seed + 1; i < scan.json.Length; i++)
             {
                 char c = scan.json[i];
@@ -505,13 +506,13 @@ public class MyJson
                 {
                     i++;
                     c = scan.json[i];
-                    _value += c;
+                    sb.Append( c);
                 }
 
                 else if (c != '\"')
                 {
 
-                    _value += c;
+                    sb.Append(c);
                 }
 
                 else
@@ -520,7 +521,7 @@ public class MyJson
                     break;
                 }
             }
-            value = _value;
+            value = sb.ToString();
         }
 
         public static implicit operator string(JsonNode_ValueString m)
