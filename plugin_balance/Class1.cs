@@ -6,6 +6,11 @@ namespace plugin_balance
     public class Class1 : IPlugin_Sync
     {
         public string Name => "balance";
+
+        public bool NeedNotify => false;
+
+        public bool NeedFullLog => false;
+
         MyJson.JsonNode_Object statejson;
         public void OnBeginBlock(MyJson.JsonNode_Object statejson)
         {
@@ -99,12 +104,12 @@ namespace plugin_balance
         void DestoryUTXO(string txid, int n)
         {
             //取得uxto中的地址
-            var txmap = statejson["txs"] as MyJson.JsonNode_Object;
+            var txmap = statejson["txs"] as MyJson.JsonNode_Object; //txmap 相当于一个mongodb 仓库
             var vout = txmap[txid].AsDict()["vout"].AsList()[n].AsDict();
             var address = vout["address"].AsString();//这个钱给了谁
 
             var utxomap = statejson["utxo"] as MyJson.JsonNode_Object;
-            var utxoaddr = utxomap[address].AsDict();
+            var utxoaddr = utxomap[address].AsDict(); //utxomap 相当于一个mongodb 仓库
 
             var key = txid + n.ToString("x04");
             //utxoaddr.Remove(key);//直接删除一笔花费或者将他标记为已经花费
@@ -150,6 +155,7 @@ namespace plugin_balance
             trans.SetDictValue("vout", vout);
         }
 
+        //注册资源
         void RegAsset(string txid, MyJson.JsonNode_Object asset)
         {
             if (statejson.ContainsKey("assets") == false)
@@ -178,6 +184,7 @@ namespace plugin_balance
             assetname2hash.SetDictValue(__name, txid);
 
         }
+
         string GetAssetName(string txid)
         {
             var hashmap2asset = statejson["assets"].AsList()[0].AsDict();
@@ -211,6 +218,11 @@ namespace plugin_balance
         public void OnSyncNotify(int block, MyJson.JsonNode_Array notes)
         {
 
+        }
+
+        public MyJson.JsonNode_Object RPC(string call, params string[] args)
+        {
+            throw new NotImplementedException();
         }
     }
 }

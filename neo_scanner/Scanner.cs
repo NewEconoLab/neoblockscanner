@@ -77,6 +77,8 @@ namespace neo_scanner
             }
             Console.WriteLine("start block=" + processedBlock);
         }
+        bool bNeedFullLog = false;
+        bool bNeedNotify = false;
         void LoadPlugin()
         {
 
@@ -99,6 +101,10 @@ namespace neo_scanner
             foreach (var p in plugins)
             {
                 p.Value.OnInit();
+                if (p.Value.NeedFullLog)
+                    bNeedFullLog = true;
+                if (p.Value.NeedNotify)
+                    bNeedNotify = true;
             }
         }
 
@@ -202,7 +208,7 @@ namespace neo_scanner
         async Task SyncBlockTo(int height)
         {
             //var idwant = this.processedBlock + 1;
-            for (var idwant = this.processedBlock + 1; idwant < height; idwant++)
+            for (var idwant = this.processedBlock + 1; idwant <= height; idwant++)
             {
                 try
                 {
@@ -216,43 +222,48 @@ namespace neo_scanner
                             throw new Exception("rpc error");
                         SyncBlock(idwant, json["result"] as MyJson.JsonNode_Object);
                         //下载notify
-                        try
+                        if (bNeedNotify)
                         {
-                            var gnstr = MakeRpcUrl(rpc_getnotifyinfo, new MyJson.JsonNode_ValueNumber(idwant));
-                            var cnstr = await wc.DownloadStringTaskAsync(gnstr);
-                            var jsonn = MyJson.Parse(cnstr).AsDict();
-                            bool bErrorn = jsonn.ContainsKey("error");
-                            if (bErrorn == false)
+                            try
                             {
-                                SyncNotify(idwant, jsonn["result"] as MyJson.JsonNode_Array);
+                                var gnstr = MakeRpcUrl(rpc_getnotifyinfo, new MyJson.JsonNode_ValueNumber(idwant));
+                                var cnstr = await wc.DownloadStringTaskAsync(gnstr);
+                                var jsonn = MyJson.Parse(cnstr).AsDict();
+                                bool bErrorn = jsonn.ContainsKey("error");
+                                if (bErrorn == false)
+                                {
+                                    SyncNotify(idwant, jsonn["result"] as MyJson.JsonNode_Array);
+                                }
                             }
-                        }
-                        catch (Exception errnotify)
-                        {
+                            catch (Exception errnotify)
+                            {
 
+                            }
                         }
                         var txs = json["result"].AsDict()["tx"].AsList();
                         foreach (MyJson.JsonNode_Object tx in txs)
                         {
                             //处理交易
                             SyncBlockTransAction(idwant, tx);
-
-                            //处理FullLog
-                            try
+                            if (bNeedFullLog)
                             {
-                                var txid = tx["txid"].AsString();
-                                var glstr = MakeRpcUrl(rpc_getfullloginfo, new MyJson.JsonNode_ValueString(txid));
-                                var clstr = await wc.DownloadStringTaskAsync(glstr);
-                                var jsonl = MyJson.Parse(clstr).AsDict();
-                                bool bErrorl = jsonl.ContainsKey("error");
-                                if (bErrorl == false)
+                                //处理FullLog
+                                try
                                 {
-                                    SyncFullLog(idwant, txid, jsonl["result"].AsString());
+                                    var txid = tx["txid"].AsString();
+                                    var glstr = MakeRpcUrl(rpc_getfullloginfo, new MyJson.JsonNode_ValueString(txid));
+                                    var clstr = await wc.DownloadStringTaskAsync(glstr);
+                                    var jsonl = MyJson.Parse(clstr).AsDict();
+                                    bool bErrorl = jsonl.ContainsKey("error");
+                                    if (bErrorl == false)
+                                    {
+                                        SyncFullLog(idwant, txid, jsonl["result"].AsString());
+                                    }
                                 }
-                            }
-                            catch (Exception errfulllog)
-                            {
+                                catch (Exception errfulllog)
+                                {
 
+                                }
                             }
                         }
                     }

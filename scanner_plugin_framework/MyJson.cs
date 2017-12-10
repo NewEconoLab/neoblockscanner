@@ -218,14 +218,15 @@ public class MyJson
         }
         public void Scan(MyJson.ScanObj scan)
         {
-            string number = "";
+           
+            StringBuilder sb = new StringBuilder();
             for (int i = scan.seed; i < scan.json.Length; i++)
             {
                 char c = scan.json[i];
                 if (c != ',' && c != ']' && c != '}' && c != ' ')
                 {
                     if (c != '\n')
-                        number += c;
+                        sb.Append(c);
                 }
                 else
                 {
@@ -233,18 +234,18 @@ public class MyJson
                     break;
                 }
             }
-
-            if (number.ToLower() == "true")
+            string number = sb.ToString().ToLower();
+            if (number == "true")
             {
                 value = 1;
                 isBool = true;
             }
-            else if (number.ToLower() == "false")
+            else if (number == "false")
             {
                 value = 0;
                 isBool = true;
             }
-            else if (number.ToLower() == "null")
+            else if (number == "null")
             {
                 value = 0;
                 isNull = true;
@@ -1096,7 +1097,7 @@ public class MyJson
 
         public void Scan(MyJson.ScanObj scan)
         {
-            string key = null;
+            StringBuilder key = null;
             int keystate = 0;//0 nokey 1scankey 2gotkey
             for (int i = scan.seed + 1; i < scan.json.Length; i++)
             {
@@ -1113,7 +1114,7 @@ public class MyJson
                     if (c == '\"')
                     {
                         keystate = 1;
-                        key = "";
+                        key = new StringBuilder();
                     }
                 }
                 else if (keystate == 1)
@@ -1126,7 +1127,7 @@ public class MyJson
                     }
                     else
                     {
-                        key += c;
+                        key.Append(c);
                     }
                 }
                 else
@@ -1137,7 +1138,7 @@ public class MyJson
                         scan.seed = i;
                         node.Scan(scan);
                         i = scan.seed - 1;
-                        this.Add(key, node);
+                        this.Add(key.ToString(), node);
                         keystate = 0;
                     }
                 }
