@@ -223,14 +223,29 @@ namespace plugin_balance
 
         public MyJson.IJsonNode RPC(string method, MyJson.JsonNode_Array args)
         {
-            if (method == "getutxo")
-            {
+            if (method == "gettxo")
+            {//得到所有，无论花费还是未花费
                 var address = args[0].AsString();
                 var utxomap = statejson["utxo"] as MyJson.JsonNode_Object;
                 var utxoaddr = utxomap[address].AsDict().Clone(); //utxomap 相当于一个mongodb 仓库
                 return utxoaddr;
             }
-            if(method =="getassets")
+            if (method == "getutxo")
+            {
+                var address = args[0].AsString();
+                var utxomap = statejson["utxo"] as MyJson.JsonNode_Object;
+                var utxoaddr = utxomap[address].AsDict().Clone().AsDict(); //utxomap 相当于一个mongodb 仓库
+                var outjson = new MyJson.JsonNode_Object();
+                foreach(var item in utxoaddr)
+                {
+                    if(item.Value.AsDict()["use"].AsString()=="")
+                    {
+                        outjson[item.Key] = item.Value;
+                    }
+                }
+                return outjson;
+            }
+            if (method =="getassets")
             {
                 var hashmap2asset = statejson["assets"].AsList()[0].AsDict().Clone();
                 return hashmap2asset;
