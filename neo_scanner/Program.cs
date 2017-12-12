@@ -22,6 +22,10 @@ namespace neo_scanner
                 {
                     case "exit":
                         scanner.Exit();
+                        while (scanner.FullExit == false)
+                        {
+                            System.Threading.Thread.Sleep(1);
+                        }
                         return;
                     case "help":
                     case "?":
@@ -53,6 +57,7 @@ namespace neo_scanner
             Console.WriteLine("save -> save a state now.");
 
         }
+
 
     }
 }

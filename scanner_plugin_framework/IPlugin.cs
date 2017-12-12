@@ -24,6 +24,6 @@ public interface IPlugin_Sync
     }
     void OnSyncFullLog(int block, string txid, string hexstring);
     void OnEndBlock();
-    MyJson.JsonNode_Object RPC(string call, params string[] args);
+    MyJson.IJsonNode RPC(string call, MyJson.JsonNode_Array _params);
 }
 

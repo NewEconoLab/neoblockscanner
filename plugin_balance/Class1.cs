@@ -80,14 +80,14 @@ namespace plugin_balance
             if (vout.Count > 0 || vin.Count > 0)
             {
                 //记录一笔交易
-                SetTran(txid, type, vin, vout);
+                SetTran(block, txid, type, vin, vout);
             }
             //销毁utxo
             foreach (var v in vin)
             {
                 var usetxid = v.GetDictItem("txid").AsString();
                 var usev = v.GetDictItem("vout").AsInt();
-                DestoryUTXO(usetxid, usev);
+                DestoryUTXO(txid, usetxid, usev);
             }
             //制造utxo
             foreach (var v in vout)
@@ -101,20 +101,20 @@ namespace plugin_balance
         }
 
         //销毁UTXO
-        void DestoryUTXO(string txid, int n)
+        void DestoryUTXO(string txid, string usetxid, int n)
         {
             //取得uxto中的地址
             var txmap = statejson["txs"] as MyJson.JsonNode_Object; //txmap 相当于一个mongodb 仓库
-            var vout = txmap[txid].AsDict()["vout"].AsList()[n].AsDict();
+            var vout = txmap[usetxid].AsDict()["vout"].AsList()[n].AsDict();
             var address = vout["address"].AsString();//这个钱给了谁
 
             var utxomap = statejson["utxo"] as MyJson.JsonNode_Object;
             var utxoaddr = utxomap[address].AsDict(); //utxomap 相当于一个mongodb 仓库
 
-            var key = txid + n.ToString("x04");
+            var key = usetxid + n.ToString("x04");
             //utxoaddr.Remove(key);//直接删除一笔花费或者将他标记为已经花费
             var money = utxoaddr[key].AsDict();
-            money.SetDictValue("canuse", false);//标记为已花费
+            money.SetDictValue("use", txid);//标记为已花费
         }
 
         //制造UTXO
@@ -134,14 +134,14 @@ namespace plugin_balance
             var key = txid + n.ToString("x04");
             var money = new MyJson.JsonNode_Object();
             utxoaddr.SetDictValue(key, money);
-            money.SetDictValue("canuse", true);//标记花费有效，方便快速统计
+            money.SetDictValue("use", "");//标记花费有效，方便快速统计
             var assetName = GetAssetName(asset);
             money.SetDictValue("asset", assetName);//记录资产名，方便统计
             money.SetDictValue("value", value);//记录资产数量，方便统计
         }
 
         //记录有花费的交易
-        void SetTran(string txid, string txtype, MyJson.JsonNode_Array vin, MyJson.JsonNode_Array vout)
+        void SetTran(int block, string txid, string txtype, MyJson.JsonNode_Array vin, MyJson.JsonNode_Array vout)
         {
             if (statejson.ContainsKey("txs") == false)
                 statejson["txs"] = new MyJson.JsonNode_Object();
@@ -150,6 +150,7 @@ namespace plugin_balance
             MyJson.JsonNode_Object trans = new MyJson.JsonNode_Object();
             txmap[txid] = trans;
 
+            trans.SetDictValue("block", block);
             trans.SetDictValue("type", txtype);
             trans.SetDictValue("in", vin);
             trans.SetDictValue("vout", vout);
@@ -188,7 +189,7 @@ namespace plugin_balance
         string GetAssetName(string txid)
         {
             var hashmap2asset = statejson["assets"].AsList()[0].AsDict();
-            if(hashmap2asset.ContainsKey("txid")==false)
+            if (hashmap2asset.ContainsKey("txid") == false)
             {
                 return txid;
             }
@@ -220,9 +221,22 @@ namespace plugin_balance
 
         }
 
-        public MyJson.JsonNode_Object RPC(string call, params string[] args)
+        public MyJson.IJsonNode RPC(string method, MyJson.JsonNode_Array args)
         {
-            throw new NotImplementedException();
+            if (method == "getutxo")
+            {
+                var address = args[0].AsString();
+                var utxomap = statejson["utxo"] as MyJson.JsonNode_Object;
+                var utxoaddr = utxomap[address].AsDict().Clone(); //utxomap 相当于一个mongodb 仓库
+                return utxoaddr;
+            }
+            if(method =="getassets")
+            {
+                var hashmap2asset = statejson["assets"].AsList()[0].AsDict().Clone();
+                return hashmap2asset;
+            }
+            return null;
+
         }
     }
 }

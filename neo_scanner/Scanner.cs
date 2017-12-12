@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -174,6 +175,59 @@ namespace neo_scanner
                  await CheckBlockLoop();
              });
             thread.Start();
+
+
+            StartHttpServer();
+        }
+        async void StartHttpServer()
+        {
+            System.Net.HttpListener http = new HttpListener();
+            http.Prefixes.Add("http://*:20666/");
+            http.Start();
+            while (true)
+            {
+                try
+                {
+                    var httpcontext = await http.GetContextAsync();
+                    MyJson.JsonNode_Object response = new MyJson.JsonNode_Object();
+
+                    try
+                    {
+
+                        string jsonrpc = httpcontext.Request.QueryString["jsonrpc"];
+                        string id = httpcontext.Request.QueryString["id"];
+                        string method = httpcontext.Request.QueryString["method"];
+                        string _params = httpcontext.Request.QueryString["params"];
+
+                        response["id"] = new MyJson.JsonNode_ValueString(id);
+                        response["result"] = await DoReq(method, MyJson.Parse(_params) as MyJson.JsonNode_Array);
+                    }
+                    catch (Exception err)
+                    {
+                        response["error"] = new MyJson.JsonNode_ValueString(err.Message);
+                    }
+                    httpcontext.Response.ContentType = "application/json";
+                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(response.ToString());
+                    await httpcontext.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    httpcontext.Response.Close();
+                }
+                catch
+                {
+
+                }
+            }
+
+        }
+        async Task<MyJson.IJsonNode> DoReq(string method, MyJson.JsonNode_Array _params)
+        {
+            foreach(var p in plugins)
+            {
+                var result = p.Value.RPC(method, _params);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
         async Task CheckBlockLoop()
         {
@@ -203,13 +257,21 @@ namespace neo_scanner
                     continue;
                 }
             }
+            SaveState();
+            FullExit = true;
             return;
         }
         async Task SyncBlockTo(int height)
         {
+            if (saveonce > 0)//每5000块备份一次
+            {
+                saveonce = 0;
+                SaveState();
+            }
             //var idwant = this.processedBlock + 1;
             for (var idwant = this.processedBlock + 1; idwant <= height; idwant++)
             {
+
                 try
                 {
                     {
@@ -269,7 +331,7 @@ namespace neo_scanner
                     }
                     this.processedBlock = idwant;
 
-                    if (idwant % 5000 == 0 || saveonce > 0)//每5000块备份一次
+                    if (idwant % 10000 == 0 || saveonce > 0)//每5000块备份一次
                     {
                         saveonce = 0;
                         SaveState();
@@ -283,6 +345,7 @@ namespace neo_scanner
                     Console.WriteLine("err in SyncBlockTo:" + err.ToString());
                     break;
                 }
+                if (bExit) return;
             }
 
         }
@@ -332,8 +395,14 @@ namespace neo_scanner
         }
         public void Exit()
         {
+
             bExit = true;
 
+        }
+        public bool FullExit
+        {
+            get;
+            private set;
         }
     }
 }
