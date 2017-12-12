@@ -189,7 +189,7 @@ namespace plugin_balance
         string GetAssetName(string txid)
         {
             var hashmap2asset = statejson["assets"].AsList()[0].AsDict();
-            if (hashmap2asset.ContainsKey("txid") == false)
+            if (hashmap2asset.ContainsKey(txid) == false)
             {
                 return txid;
             }
