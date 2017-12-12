@@ -135,7 +135,7 @@ namespace plugin_balance
             var money = new MyJson.JsonNode_Object();
             utxoaddr.SetDictValue(key, money);
             money.SetDictValue("use", "");//标记花费有效，方便快速统计
-            var assetName = GetAssetName(asset);
+            var assetName = asset;// GetAssetName(asset);
             money.SetDictValue("asset", assetName);//记录资产名，方便统计
             money.SetDictValue("value", value);//记录资产数量，方便统计
         }
