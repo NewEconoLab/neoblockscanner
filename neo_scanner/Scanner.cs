@@ -220,6 +220,11 @@ namespace neo_scanner
         }
         async Task<MyJson.IJsonNode> DoReq(string method, MyJson.JsonNode_Array _params)
         {
+            if(method =="getstate")
+            {
+                MyJson.JsonNode_ValueNumber state = new MyJson.JsonNode_ValueNumber(this.processedBlock);
+                return state;
+            }
             foreach(var p in plugins)
             {
                 var result = p.Value.RPC(method, _params);
