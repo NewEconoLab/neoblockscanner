@@ -239,26 +239,35 @@ namespace neo_scanner
             while (!bExit)
             {
                 var gstr = MakeRpcUrl(rpc_getblockcount);
-                var cstr = await wc.DownloadStringTaskAsync(gstr);
-                var json = MyJson.Parse(cstr).AsDict();
-                bool bError = json.ContainsKey("error");
-
-                if (!bError)
+                try
                 {
-                    try
+                    var cstr = await wc.DownloadStringTaskAsync(gstr);
+                    var json = MyJson.Parse(cstr).AsDict();
+                    bool bError = json.ContainsKey("error");
+
+                    if (!bError)
                     {
-                        int height = json["result"].AsInt();
-                        remoteBlockHeight = height - 1;
-                        await SyncBlockTo(height - 1);
+                        try
+                        {
+                            int height = json["result"].AsInt();
+                            remoteBlockHeight = height - 1;
+                            await SyncBlockTo(height - 1);
+                        }
+                        catch (Exception err)
+                        {
+                            Console.WriteLine(err.ToString());
+                        }
+                        await Task.Delay(5000);
                     }
-                    catch (Exception err)
-                    {
-                        Console.WriteLine(err.ToString());
+                    if (bError)
+                    {//出错了
+                        await Task.Delay(5000);
+                        continue;
                     }
                 }
-                if (bError)
-                {//出错了
-                    await Task.Delay(1000);
+                catch
+                {
+                    await Task.Delay(5000);
                     continue;
                 }
             }
